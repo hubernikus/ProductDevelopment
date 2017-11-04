@@ -30,7 +30,7 @@ class Lense():
         
         self.corr = corr
         
-        self.posx = posx # possible? convert to [m]
+        self.posx = -posx # possible? convert to [m]
 
         self.convex = np.sign(corr) #
         
@@ -59,6 +59,7 @@ class Lense():
                          self.posx+(self.widthMin/2+self.rad_curve)]
 
             dPhi = self.phi_lense*2/self.N_points # angle iteration for plot
+
             
             plt.plot([self.pos0[0]+self.rad_curve*cos(-self.phi_lense+dPhi*i)
                   for i in range(self.N_points+1)],
@@ -95,7 +96,7 @@ class Lense():
             x0 = self.pos0[1]
             r = self.rad_curve
 
-            # Find point of intersection
+            # Find point of intersection with the lense
             a1 = 1+a**2
             b1 = -2*a*b - 2*a**2*x0
             c1 = a**2*x0**2 + 2*a*b*x0 + b**2 - r**2
@@ -105,21 +106,24 @@ class Lense():
             x_in = x0-dx
             y_in = a*x_in+b
 
-            plt.plot([photon.x0[0],x_in],[photon.x0[1],y_in])
+            plt.plot([photon.x0[0],x_in],[photon.x0[1],y_in],'m')
 
             # Refraction of the light beam
             phi_in = atan2(y_in,dx)
             theta1_abs_in = atan2(a,1)
             theta1_rel_in = theta1_abs_in + phi_in
+            
             theta2_rel_in = asin(refractionIndex_air/self.refractionIndex*sin(theta1_rel_in))
             theta2_abs_in = theta2_rel_in-phi_in
 
-            plt.plot([self.pos0[1]-0.9*r*cos(phi_in), self.pos0[1]-1.1*r*cos(phi_in)],
-                     [0.9*r*sin(phi_in), 1.1*r*sin(phi_in)],'k--')
+            dr = 2
+            plt.plot([self.pos0[1]-(r-dr)*cos(phi_in), self.pos0[1]-(r+dr)*cos(phi_in)],
+                [(r-dr)*sin(phi_in), (r+dr)*sin(phi_in)],'k--')
 
+            
             # Extract line parameters
             a = theta2_abs_in
-            b = y_in-x_in
+            b = y_in-a*x_in
 
             # Extract lense parameters
             x0 = self.pos0[0]
@@ -135,7 +139,7 @@ class Lense():
             x_out = x0+dx
             y_out = a*x_in+b
 
-            plt.plot([x_in,x_out],[y_in,y_out])
+            plt.plot([x_in,x_out],[y_in,y_out], 'm')
 
             phi_out = atan2(y_out,dx)
             theta1_abs_out = atan2(a,1)
@@ -143,12 +147,10 @@ class Lense():
             theta2_rel_out = asin(self.refractionIndex/refractionIndex_air*sin(theta1_rel_out))
             theta2_abs_out = theta2_rel_out + phi_out
 
-            print(theta2_abs_out)
-            dr = 10
+                        # plot normal (for defraction visualization)
             plt.plot([self.pos0[0]+(r-dr)*cos(phi_out), self.pos0[0]+(r+dr)*cos(phi_out)],
                      [(r-dr)*sin(phi_out), (r+dr)*sin(phi_out)],'k--')
 
-            print(self.pos0[1])
             return Line([x_out, y_out], theta2_abs_out)
 
             # n1 * sin theta = n2 * sin theta
@@ -166,13 +168,36 @@ class Line:
         self.dir = dir;
         self.x0 = x0;
 
-def lightSimulation(photon, lenses):
-    for i in range(len(lenses)): # 
-        photon = lenses[i].findInterection(photon)
 
-    # Intersection with horizontal
+def lastArraySimu(lightOut):
+    a = lightOut.dir
+    b = lightOut.x0[1]- a*lightOut.x0[0]
+
+    yLim = Lense.rad_lens*1.05
+
+    if b > 0:
+        dx = (yLim-lightOut.x0[1])/a
+    elif b < 0:
+        dx = (-yLim-lightOut.x0[1])/a
+    else:
+        dx = 10 # [mm] - plot for some distance...
+
+    maxDist = 20 # maximal desired display in x direction
+    dx = min(maxDist, abs(dx))
     
-    print('LightSimulation finished')
+    plt.plot([lightOut.x0[0],lightOut.x0[0]+dx],[lightOut.x0[1],lightOut.x0[1]+dx*a],'m')
+    
+
+def lightSimulation(incomingLight, lenses):
+    for p in range(len(incomingLight)):
+        photon = incomingLight[p]
+        for i in range(len(lenses)): # 
+            photon = lenses[i].photonSimulation(photon)
+
+            # Intersection with horizontal
+        lastArraySimu(photon)
+
+    #print('LightSimulation finished')
 
 
 print('Simulation started')
@@ -180,50 +205,39 @@ print('Simulation started')
 plt.figure()
 
 # Position Eye
-posEyeX = -10
+posEyeX = 10
 plt.plot(posEyeX,0,'bo')
 #plt.xlabel('Position x [mm]')
 
 lenses = []
 # Add lenses in the form
 # lenses.append(Lense(<>,<>))
+lenses.append(Lense(1000, 50))
+lenses.append(Lense(1000, 30))
+lenses.append(Lense(1000, 10))
+#lenses.append(Lense(1000, 5))
+#lenses.append(Lense(1000, 7))
 
-lenses.append(Lense(100, 1))
 
-#lenses.append(Lense(-1000, 3))
+# Simulate Eye
+lenses.append(Lense(100, 0))
 
-#lenses.append(Lense(10000, 4))
 
 # Define simulation photons
-photon = Line([posEyeX,0], 1)
-
-print(photon.x0)
-
-dx =10;
-#plt.plot([photon.x0[0],photon.x0[0]+dx],[photon.x0[1],photon.x0[1]+dx*photon.dir],'r')
-
-lightOut = lenses[0].photonSimulation(photon)
-
-a = lightOut.dir
-b = lightOut.x0[1]- a*lightOut.x0[0]
-print(b)
-yLim = Lense.rad_lens*1.05
-
-if b > 0:
-    dx = (yLim-lightOut.x0[1])/a
-elif b < 0:
-    dx = (-yLim-lightOut.x0[1])/a
-else:
-    dx = 10 # [mm] - plot for some distance...
-
-plt.plot([lightOut.x0[0],lightOut.x0[0]+dx],[lightOut.x0[1],lightOut.x0[1]+dx*a])
-
-#lightSimulation(photon, lenses)
+photons = []
+posObject = -0.1e3 # [mm]
+photons.append(Line([posObject,20], 0))
+photons.append(Line([posObject,10], 0))
+photons.append(Line([posObject,-10], 0))
+photons.append(Line([posObject,-20], 0))
 
 
 
+# Simulate
+lightSimulation(photons, lenses)
 
 
+# Display plot
 plt.show()
 
 print('Simulation ended ')
