@@ -143,6 +143,7 @@ class Lense():
             theta2_rel_out = asin(self.refractionIndex/refractionIndex_air*sin(theta1_rel_out))
             theta2_abs_out = theta2_rel_out + phi_out
 
+            print(theta2_abs_out)
             dr = 10
             plt.plot([self.pos0[0]+(r-dr)*cos(phi_out), self.pos0[0]+(r+dr)*cos(phi_out)],
                      [(r-dr)*sin(phi_out), (r+dr)*sin(phi_out)],'k--')
@@ -201,7 +202,21 @@ print(photon.x0)
 dx =10;
 #plt.plot([photon.x0[0],photon.x0[0]+dx],[photon.x0[1],photon.x0[1]+dx*photon.dir],'r')
 
-lenses[0].photonSimulation(photon)
+lightOut = lenses[0].photonSimulation(photon)
+
+a = lightOut.dir
+b = lightOut.x0[1]- a*lightOut.x0[0]
+print(b)
+yLim = Lense.rad_lens*1.05
+
+if b > 0:
+    dx = (yLim-lightOut.x0[1])/a
+elif b < 0:
+    dx = (-yLim-lightOut.x0[1])/a
+else:
+    dx = 10 # [mm] - plot for some distance...
+
+plt.plot([lightOut.x0[0],lightOut.x0[0]+dx],[lightOut.x0[1],lightOut.x0[1]+dx*a])
 
 #lightSimulation(photon, lenses)
 
