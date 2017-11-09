@@ -1,15 +1,16 @@
 """
 Lense simulation using python
 
+EPFL - Product Devlopement
+
 Author: Huber Lukas
-Date> 2017/11/02
+Date: 2017/11/02
 
 """
 ## Import libraries
 import numpy as np #math library
 import matplotlib.pyplot as plt # figure plotting
-from math import cos,sin,asin,acos, atan2, sqrt, pi
-
+from math import cos,sin,asin,acos ,tan,atan2, sqrt, pi
 
 refractionIndex_air = 1.000277
 
@@ -18,9 +19,6 @@ class Lense():
     widthMin = 0.1 # [mm]
     rad_lens  = 30  # [mm]
 
-    # Fraction Coefficient
-    refractionIndex = 1.47 # Glycerol
-    
     # Visulazation
     N_points = 10 # number of datapoints to plot each side
 
@@ -33,6 +31,11 @@ class Lense():
         self.posx = -posx # possible? convert to [m]
 
         self.convex = np.sign(corr) #
+
+        
+        # Fraction Coefficient
+        self.refractionIndex = 1.47 # Glycerol
+
         
         if self.convex>0:
             self.rad_curve = corr
@@ -59,7 +62,6 @@ class Lense():
                          self.posx+(self.widthMin/2+self.rad_curve)]
 
             dPhi = self.phi_lense*2/self.N_points # angle iteration for plot
-
             
             plt.plot([self.pos0[0]+self.rad_curve*cos(-self.phi_lense+dPhi*i)
                   for i in range(self.N_points+1)],
@@ -82,9 +84,9 @@ class Lense():
                      [self.rad_curve*sin(self.phi_lense),
                       self.rad_curve*sin(self.phi_lense)],
                      'k')
-
         else:
             print('flat plate detected')
+
 
     def photonSimulation(self, photon):
         if self.convex:
@@ -185,6 +187,8 @@ def lastArraySimu(lightOut):
     maxDist = 20 # maximal desired display in x direction
     dx = min(maxDist, abs(dx))
     
+    dx = 20
+    
     plt.plot([lightOut.x0[0],lightOut.x0[0]+dx],[lightOut.x0[1],lightOut.x0[1]+dx*a],'m')
     
 
@@ -199,10 +203,30 @@ def lightSimulation(incomingLight, lenses):
 
     #print('LightSimulation finished')
 
+    
+def CreateObjectsArrays(pos, lenseDistMax):
+    safetyMargin = 0.4
+    rad_lense = 30
+    nArrays = 7
+
+    photons = []
+    print(pos)
+    
+    angMax = atan2(rad_lense, pos[0]-lenseDistMax)*safetyMargin
+
+    print(angMax)
+    dAng = 2*angMax/(nArrays-1)
+    
+    for i in range(nArrays):
+        photons.append(Line([-pos[0],pos[1]], tan(dAng*i-angMax)))
+    
+    return photons
+
 
 print('Simulation started')
 ## --------------------------------------------------------------------
 plt.figure()
+plt.subplot(2,1,1)
 
 # Position Eye
 posEyeX = 10
@@ -212,30 +236,50 @@ plt.plot(posEyeX,0,'bo')
 lenses = []
 # Add lenses in the form
 # lenses.append(Lense(<>,<>))
+lenses.append(Lense(1000, 100))
 lenses.append(Lense(1000, 50))
 lenses.append(Lense(1000, 30))
 lenses.append(Lense(1000, 10))
-#lenses.append(Lense(1000, 5))
-#lenses.append(Lense(1000, 7))
-
-
 # Simulate Eye
 lenses.append(Lense(100, 0))
 
 
 # Define simulation photons
-photons = []
-posObject = -0.1e3 # [mm]
-photons.append(Line([posObject,20], 0))
-photons.append(Line([posObject,10], 0))
-photons.append(Line([posObject,-10], 0))
-photons.append(Line([posObject,-20], 0))
-
-
+photonsClose = CreateObjectsArrays([200,0], 100)
+#photonsClose = CreateObjectsArrays([100000,0], 100)
 
 # Simulate
-lightSimulation(photons, lenses)
+lightSimulation(photonsClose, lenses)
 
+plt.xlim([-120, 20])
+
+# TODOOOO: use in supblots, far vs close
+
+plt.subplot(2,1,2)
+
+# Position Eye
+posEyeX = 10
+plt.plot(posEyeX,0,'bo')
+#plt.xlabel('Position x [mm]')
+
+lenses = []
+# Add lenses in the form
+# lenses.append(Lense(<>,<>))
+lenses.append(Lense(1000, 100))
+lenses.append(Lense(1000, 50))
+lenses.append(Lense(1000, 30))
+lenses.append(Lense(1000, 10))
+# Simulate Eye
+lenses.append(Lense(100, 0))
+
+
+# Define simulation photons
+photonsClose = CreateObjectsArrays([100000,0], 100)
+
+# Simulate
+lightSimulation(photonsClose, lenses)
+
+plt.xlim([-120, 20])
 
 # Display plot
 plt.show()
