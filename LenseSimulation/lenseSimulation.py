@@ -222,16 +222,22 @@ def CreateObjectsArrays(pos, lenseDistMax):
     
     return photons
 
+################################################################################
+#
+# MODIFY here
+#
 
 print('Simulation started')
 ## --------------------------------------------------------------------
+
 plt.figure()
 plt.subplot(2,1,1)
+
 
 # Position Eye
 posEyeX = 10
 plt.plot(posEyeX,0,'bo')
-#plt.xlabel('Position x [mm]')
+
 
 lenses = []
 # Add lenses in the form
@@ -265,10 +271,10 @@ plt.plot(posEyeX,0,'bo')
 lenses = []
 # Add lenses in the form
 # lenses.append(Lense(<>,<>))
-lenses.append(Lense(1000, 100))
-lenses.append(Lense(1000, 50))
-lenses.append(Lense(1000, 30))
-lenses.append(Lense(1000, 10))
+lenses.append(Lense(500, 100))
+lenses.append(Lense(500, 80))
+lenses.append(Lense(500, 30))
+lenses.append(Lense(500, 10))
 # Simulate Eye
 lenses.append(Lense(100, 0))
 
@@ -282,6 +288,7 @@ lightSimulation(photonsClose, lenses)
 plt.xlim([-120, 20])
 
 # Display plot
+plt.xlabel('Position x [mm]')
 plt.show()
 
 print('Simulation ended ')
