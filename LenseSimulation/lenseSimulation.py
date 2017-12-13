@@ -47,7 +47,7 @@ class Lens():
             # Fraction Coefficient
             self.refractionIndex = 1.47 # Glycerol
             
-            self.rad_lens  = 20  # [mm]
+            self.rad_lens  = 30/2  # [mm]
         
         if self.convex>0:
             self.rad_curve = corr
@@ -288,7 +288,7 @@ plt.subplot(2,1,1)
 lenss = []
 # Add lenss in the form
 # lenss.append(Lens(<>,<>))
-lenss.append(Lens(50, 25))
+lenss.append(Lens(58, 25))
 print('Lens1 volume is ',  round(lenss[0].getVolume(),2), 'ml.')
 # Simulate Eye
 lenss.append(Lens(50, 0, 'eye'))
@@ -313,7 +313,7 @@ plt.subplot(2,1,2)
 lenss = []
 # Add lenss in the form
 # lenss.append(Lens(<>,<>))
-lenss.append(Lens(100, 25))
+lenss.append(Lens(70, 25))
 print('Lens2 volume is ',  round(lenss[0].getVolume(),2), 'ml.')
 # Simulate Eye
 lenss.append(Lens(50, 0, 'eye'))
