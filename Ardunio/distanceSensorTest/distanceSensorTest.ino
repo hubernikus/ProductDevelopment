@@ -29,7 +29,7 @@ long lecture_echo;
 long distance_mm;
 long measure;
 
-//const long timeout = 25000UL; // connait pas a quoi ca sert ??? a chercher
+//const long timeout = 25000UL; // connait pas a quoi ca sert ??? a chercher  
 //float soundSpeed = 340/1000;
 
 // Partie pour le servomoteur
@@ -116,8 +116,14 @@ void loop() {
     int i;
     for(i=1; i<nMeas; i++){
       if(lecture_echo >  refDist[i]|| i == nMeas-1){
-      servoPos = (1.*lecture_echo-refDist[i-1])/(refDist[i]-refDist[i-1]) * (refAng[i]-refAng[i-1]) + refAng[i-1];
+      Serial.print(F("Index // i: "));
+      Serial.print(i);
+      Serial.print((1.*lecture_echo-refDist[i-1])/(refDist[i]-refDist[i-1]));
+      Serial.print("\r\n"); 
+      servoPosNew = (1.*lecture_echo-refDist[i-1])/(refDist[i]-refDist[i-1]) * (refAng[i]-refAng[i-1]) + refAng[i-1];
+      break;
       }
+      
     }
     
     Serial.print(F("Distance [mm]:"));
@@ -152,5 +158,5 @@ void loop() {
 
   Servo1.write(servoPos);
 
-  delay(20);
+  delay(1000);
 }
