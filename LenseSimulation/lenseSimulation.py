@@ -288,6 +288,7 @@ plt.subplot(2,1,1)
 lenss = []
 # Add lenss in the form
 # lenss.append(Lens(<>,<>))
+lenss.append(Lens(100, 50))
 lenss.append(Lens(58, 25))
 print('Lens1 volume is ',  round(lenss[0].getVolume(),2), 'ml.')
 # Simulate Eye

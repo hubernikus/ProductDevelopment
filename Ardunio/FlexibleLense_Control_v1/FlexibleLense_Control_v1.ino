@@ -1,15 +1,15 @@
 /*
-Control of Servo Motor attached to flexible lense with distance sensor. 
+Controlc of Servo Motor attached to flexible lense with distance sensor.
 
 Control via keyboars:
 Control modes:
 '0' - default (0 change)
 
 'a' - automatic controll
-  
+
 'c' Callibrate
-  'u' - increment servo 
-  'd' - decrement servo 
+  'u' - increment servo
+  'd' - decrement servo
 */
 
 #include <Servo.h>
@@ -18,7 +18,8 @@ Control modes:
 int inputSerial;
 
 // Control Mode
-char controlMode ='a';
+char controlMode ='0';
+char movingDirection = 'f';
 
 // Distance Sensor
 const byte triggerPin = 13;
@@ -40,20 +41,30 @@ Servo Servo1;
 
 int servoPos;
 float servoPos_new;
-int servoSpeedMax = 2;
-int deltaServo;
+int servoSpeedMax = 2.5;
+float deltaServo;
 float filterRatio = 0.01; // the smaller, the longer it takes to accept new values.
- 
+
 // Iteration counter  to display output
 int itNum;
 
-// Distance and Corresponding Position 
-const int refDist [] = {0, 1000, 2000, 3000}; // [mm]
-const int refAng [] = {0, 90, 120, 180}; // [deg]
-int nMeas;
-int servoMax, servoMin;
+// Distance and Corresponding Position
+//const int refDist [] = {0, 1000, 2000, 3000}; // [mm]
+//const int refAng [] = {0, 90, 120, 180}; // [deg]
 
-const int defaultPos = 90;
+const int refDist [] = { 270, 246, 222, 197, 170, 149, 122, 92, 68,  40}; // [mm]
+const int refAng [] =  {  60,  60,  65,  65,  65,  70,  75, 85, 90, 125}; // [deg]
+const int deltaPos_dir = 10; // [deg]
+// direction up at 80
+// direction up at 70
+
+// delta 10, it doesen't move.
+
+int nMeas;
+const int servoMin = 40;
+const int servoMax = 135;
+
+const int defaultPos = 40;
 
 // Iteration counter for printing values to screen
 int itCount = 0;
@@ -74,27 +85,24 @@ void setup() {
   Serial.print("Number of reference measurments: ");
   Serial.print(nMeas);
   Serial.print("\r\n");
-  
-  // Set default servo values
-  servoMin = refAng[0];
-  servoMax = refAng[nMeas-1];
 
   // Initial servo pos
   servoPos = defaultPos;
   Servo1.write(servoPos);
   delay(100);
-  Servo1.write(servoPos+10);
+  Servo1.write(servoPos+1);
   delay(100);
-  Servo1.write(servoPos-10);
+  Servo1.write(servoPos-1);
   delay(100);
   Servo1.write(servoPos);
 }
 
 
 void loop() {
-  
-  inputSerial = Serial.read(); 
-  
+  servoPos_new = servoPos;
+
+  inputSerial = Serial.read();
+
   // Change control mode via keyboard
   if(char(inputSerial) == '0'){
     controlMode = '0';
@@ -111,56 +119,57 @@ void loop() {
     Serial.print("---------- New mode 'callibration' \r\n");
     delay(500);
   }
-  
-  
+
+
   // Capture Distance
   digitalWrite(triggerPin,HIGH);
   delayMicroseconds(10);
   digitalWrite(triggerPin,LOW);
-  
+
   // mesure le temps d'envoi
   lecture_echo = pulseIn(echoPin,HIGH);
   distance_mm =lecture_echo/6;
-  
-  
+
+
   // Different control modes
   if(controlMode=='0'){ //calibration
       servoPos_new = defaultPos;
   }
-  
+
   if(controlMode =='a'){ //automatic
     // calcul la distance en fonction du temps de trajet mesuré
     int i;
-    
+
     for(i=1; i<nMeas; i++){
-      if(distance_mm < refDist[i] || i == nMeas-1){
+      if(distance_mm > refDist[i] || i == nMeas-1){
       servoPos_new = (1.*distance_mm-refDist[i-1])/(refDist[i]-refDist[i-1]) * (refAng[i]-refAng[i-1]) + refAng[i-1];
       break;
       }
     }
-    //
+    // Add filtering ???
     //servoPos = servoPos*(1-filterRatio) + servoPos_new*filterRatio;
     //servoPos = servoPos_new;
-    
-    // Check limits
-    if(servoPos > servoMax){
-      servoPos = servoMax;
-    }
-    else if(servoPos < servoMin){
-      servoPos = servoMin;
-    }
-    
-    if(itNum>-1){
+
+    if(itNum>10){
       itNum = 0;
-      Serial.print(F("Iteration num:"));
-      Serial.print(i                                                                                                                                                                                                                                                                                                                                                                                                                                                  );
-      Serial.print("\r\n");   
-      
+      Serial.print(F("Iteration : "));
+      //Serial.print(i);
+      Serial.print(i);
+      Serial.print("\r\n");
+
       Serial.print(F("Distance [mm]:"));
       Serial.print(distance_mm);
       Serial.print("\r\n");
+      Serial.print(F("refDist1:"));
+      Serial.print(refDist[i-1]);
+      Serial.print("\r\n");
+
+      Serial.print(F("refDist2:"));
+      Serial.print(refDist[i]);
+      Serial.print("\r\n");
+
       Serial.print("Pos: ");
-      Serial.print(servoPos);
+      Serial.print(servoPos_new);
       Serial.print("\r\n");
     }
     else
@@ -169,10 +178,10 @@ void loop() {
     }
   }
   else if(controlMode =='c'){ //calibration
-  
+
     if(inputSerial ==100){ // 'd' 100
       if(servoPos >=0){
-        servoPos = servoPos - servoSpeedMax; 
+        servoPos_new = servoPos - 5;
       }
       Serial.print("---------- New pos: ");
       Serial.print(servoPos);
@@ -180,7 +189,7 @@ void loop() {
     }
     else if(char(inputSerial)=='u'){// 'u'  117
         if(servoPos <= 180) {
-          servoPos = servoPos + servoSpeedMax; 
+          servoPos_new = servoPos + 5;
         }
         Serial.print("---------- New pos: ");
         Serial.print(servoPos);
@@ -197,23 +206,78 @@ void loop() {
       itNum++;
     }
   }
-  
-  // Check if maximal position change
+
+  // Decide directino of movement
   deltaServo = servoPos_new - servoPos;
   if(deltaServo > 0){
-    if(deltaServo > servoSpeedMax)
-      servoPos = servoPos + servoSpeedMax;
-    else 
-      servoPos = servoPos + deltaServo;
+    movingDirection = 'f';
   }
-  else if(deltaServo < servoSpeedMax){ // negative values
-    if((-1)*deltaServo > servoSpeedMax)
-      servoPos = servoPos - servoSpeedMax;
-    else 
-      servoPos = servoPos - deltaServo;
+  else if(deltaServo < 0){
+    servoPos_new = servoPos_new - deltaPos_dir;
+    movingDirection = 'b';
   }
 
+  // Initial seringe movement to get the motor moving.
+  if(char(movingDirection) == 'b'){
+      servoPos_new = servoPos_new - deltaPos_dir;
+  }
+//
+//  // Output servo positoin
+//  Serial.print("New Pos");
+//  Serial.print(servoPos_new);
+//  Serial.print("\r\n");
+//
+//  // Output servo positoin
+//  Serial.print("Old Pos: ");
+//  Serial.print(servoPos);
+//  Serial.print("\r\n");
+//
+  // Check if maximal position change
+  deltaServo = servoPos_new - servoPos; // calculate again with new moving direction
+
+//  // Output servo positoin
+//  Serial.print("DeltaServo: ");
+//  Serial.print(deltaServo);
+//  Serial.print("\r\n");
+
+  if(deltaServo > 0){
+    if(deltaServo > servoSpeedMax){
+      servoPos = servoPos + servoSpeedMax;
+    }
+    else{
+      servoPos = servoPos + deltaServo;
+    }
+  }
+  else if(deltaServo < 0){ // negative values
+    if((-1)*deltaServo > servoSpeedMax){
+      servoPos = servoPos - servoSpeedMax;
+    }
+    else{
+      servoPos = servoPos + deltaServo; // is already a negative value
+    }
+  }
+
+
+  // Output servo positoin
+//  Serial.print("Pos final: ");
+//  Serial.print(servoPos);
+//  Serial.print("\r\n");
+
+
+  // Check limits - reset
+  if(servoPos > servoMax){
+    servoPos = servoMax;
+  }
+  else if(servoPos < servoMin){
+    servoPos = servoMin;
+  }
+
+
+
+
   Servo1.write(servoPos);
+
+
 
   delay(200);
 }
