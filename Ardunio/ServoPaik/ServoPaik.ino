@@ -36,6 +36,7 @@ long measure;
 // Declare the Servo pin
 const int servoPin = 10;
 
+
 // Create a servo object
 Servo Servo1;
 
